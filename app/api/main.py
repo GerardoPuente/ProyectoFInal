@@ -4,13 +4,14 @@ import uuid
 from contextlib import asynccontextmanager
 
 import psycopg
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from api.exportar import exportar_router
 from clipshare import db, reglas, seguridad, storage
+from clipshare.auth import dependencia_usuario_actual
 from clipshare.config import Config
 
 cfg = Config()
@@ -25,7 +26,8 @@ async def ciclo_de_vida(_: FastAPI):
 
 app = FastAPI(title="ClipShare", lifespan=ciclo_de_vida)
 app.mount("/static", StaticFiles(directory="/app/api/static"), name="static")
-app.include_router(exportar_router)
+if cfg.exportar_habilitado:
+    app.include_router(exportar_router)
 
 PATRON_USUARIO = re.compile(r"^[a-zA-Z0-9_]{3,30}$")
 
@@ -35,12 +37,7 @@ class Credenciales(BaseModel):
     password: str
 
 
-def usuario_actual(authorization: str = Header(default="")) -> int:
-    token = authorization.removeprefix("Bearer ").strip()
-    uid = seguridad.leer_token(cfg.secret_key, token, cfg.token_horas) if token else None
-    if uid is None:
-        raise HTTPException(status_code=401, detail="Sesion invalida o expirada")
-    return uid
+usuario_actual = dependencia_usuario_actual(cfg)
 
 
 @app.get("/")

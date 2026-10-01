@@ -23,3 +23,6 @@ class Config:
         self.max_bytes = int(os.environ.get("MAX_UPLOAD_MB", "50")) * 1024 * 1024
         self.max_duracion_s = int(os.environ.get("MAX_DURACION_S", "300"))
         self.token_horas = int(os.environ.get("TOKEN_HORAS", "12"))
+        # Bandera de contencion inmediata (docs/respuesta_incidente.md): permite
+        # apagar el endpoint de exportar sin tocar codigo ni redesplegar nada.
+        self.exportar_habilitado = os.environ.get("EXPORTAR_CLIPS_HABILITADO", "true").lower() == "true"

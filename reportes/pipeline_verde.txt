@@ -1,0 +1,159 @@
+Pipeline ClipShare - 2026-09-30 23:20:30
+Commit: 581437f
+Archivos analizados: 51
+[notice] To update, run: C:\Users\Trax GG\Downloads\OneDrive_2026-10-01\Avance 2\plantilla_repositorio_avance2\.venv-pipeline\Scripts\python.exe -m pip install --upgrade pip
+
+==================================================================
+ ETAPA: 1. Secretos en el codigo (Gitleaks)
+ Umbral que bloquea: cualquier secreto detectado (0 toleradas)
+==================================================================
+5:20AM INF scanned ~804020 bytes (804.02 KB) in 542ms
+5:20AM INF no leaks found
+--> [APROBADA] 1. Secretos en el codigo (Gitleaks)
+
+==================================================================
+ ETAPA: 2. Analisis estatico del codigo (Bandit)
+ Umbral que bloquea: 1 o mas hallazgos de severidad ALTA
+==================================================================
+Run started:2026-10-01 05:20:32.757638+00:00
+
+Test results:
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-377 (https://cwe.mitre.org/data/definitions/377.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b108_hardcoded_tmp_directory.html
+   Location: C:/Users/Trax GG/Downloads/OneDrive_2026-10-01/Avance 2/plantilla_repositorio_avance2/.pipeline-tmp/fuente/app\worker\worker.py:17:14
+16	
+17	LATIDO = Path("/tmp/worker.latido")  # lo lee el HEALTHCHECK del contenedor
+18	INTERVALO_S = 3
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 424
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 8
+		Medium: 1
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 1
+		High: 8
+Files skipped (0):
+--> [APROBADA] 2. Analisis estatico del codigo (Bandit)
+
+==================================================================
+ ETAPA: 3. Pruebas de las reglas de validacion (pytest)
+ Umbral que bloquea: 1 o mas pruebas fallidas
+==================================================================
+....s..........                                                          [100%]
+14 passed, 1 skipped in 0.93s
+--> [APROBADA] 3. Pruebas de las reglas de validacion (pytest)
+
+==================================================================
+ ETAPA: 4. Dependencias vulnerables (Trivy)
+ Umbral que bloquea: 1 o mas CVE HIGH,CRITICAL con parche disponible
+==================================================================
+2026-10-01T05:20:34Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T05:20:34Z	WARN	[pip] Unable to find python `site-packages` directory. License detection is skipped.	err="unable to find path to Python executable"
+2026-10-01T05:20:34Z	INFO	Number of language-specific files	num=1
+2026-10-01T05:20:34Z	INFO	[pip] Detecting vulnerabilities...
+
+Report Summary
+
+┌──────────────────┬──────┬─────────────────┐
+│      Target      │ Type │ Vulnerabilities │
+├──────────────────┼──────┼─────────────────┤
+│ requirements.txt │ pip  │        0        │
+└──────────────────┴──────┴─────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+--> [APROBADA] 4. Dependencias vulnerables (Trivy)
+
+==================================================================
+ ETAPA: 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+ Umbral que bloquea: 1 o mas fallas HIGH,CRITICAL de configuracion
+==================================================================
+2026-10-01T05:20:35Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-10-01T05:20:35Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-10-01T05:20:36Z	INFO	[terraform scanner] Scanning root module	file_path="infra"
+2026-10-01T05:20:36Z	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="cidr_autorizado, db_password"
+2026-10-01T05:20:36Z	INFO	Detected config files	num=4
+
+Report Summary
+
+┌───────────────────┬────────────┬───────────────────┐
+│      Target       │    Type    │ Misconfigurations │
+├───────────────────┼────────────┼───────────────────┤
+│ Dockerfile.api    │ dockerfile │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ Dockerfile.worker │ dockerfile │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ infra             │ terraform  │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ infra/main.tf     │ terraform  │         0         │
+└───────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+--> [APROBADA] 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+
+==================================================================
+ ETAPA: 6. Politica de Dockerfile endurecido
+ Umbral que bloquea: version no fija, USER root, sin HEALTHCHECK o secreto en Dockerfile
+==================================================================
+Dockerfile.api: CUMPLE
+Dockerfile.worker: CUMPLE
+--> [APROBADA] 6. Politica de Dockerfile endurecido
+
+==================================================================
+ ETAPA: 7. Imagenes de contenedor (build + Trivy image)
+ Umbral que bloquea: 1 o mas CVE HIGH,CRITICAL con parche disponible en api o worker
+==================================================================
+--- construyendo clipshare-api:pipeline
+--- escaneando clipshare-api:pipeline
+2026-10-01T05:20:42Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T05:21:08Z	INFO	Detected OS	family="debian" version="13.7"
+2026-10-01T05:21:08Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=292
+2026-10-01T05:21:08Z	INFO	Number of language-specific files	num=1
+2026-10-01T05:21:08Z	INFO	[python-pkg] Detecting vulnerabilities...
+2026-10-01T05:21:08Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+--- construyendo clipshare-worker:pipeline
+--- escaneando clipshare-worker:pipeline
+2026-10-01T05:21:14Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T05:21:46Z	INFO	Detected OS	family="debian" version="13.7"
+2026-10-01T05:21:46Z	INFO	[debian] Detecting vulnerabilities...	os_version="13" pkg_num=292
+2026-10-01T05:21:46Z	INFO	Number of language-specific files	num=1
+2026-10-01T05:21:46Z	INFO	[python-pkg] Detecting vulnerabilities...
+2026-10-01T05:21:46Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+--> [APROBADA] 7. Imagenes de contenedor (build + Trivy image)
+
+==================================================================
+ ETAPA: 8. SBOM CycloneDX
+ Umbral que bloquea: SBOM invalido o sin componentes
+==================================================================
+SBOM CycloneDX 1.7 con 325 componentes
+--> [APROBADA] 8. SBOM CycloneDX
+
+==================================================================
+ RESUMEN DEL PIPELINE
+==================================================================
+  [ OK  ] 1. Secretos en el codigo (Gitleaks)
+  [ OK  ] 2. Analisis estatico del codigo (Bandit)
+  [ OK  ] 3. Pruebas de las reglas de validacion (pytest)
+  [ OK  ] 4. Dependencias vulnerables (Trivy)
+  [ OK  ] 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+  [ OK  ] 6. Politica de Dockerfile endurecido
+  [ OK  ] 7. Imagenes de contenedor (build + Trivy image)
+  [ OK  ] 8. SBOM CycloneDX
+
+VEREDICTO FINAL: DESPLIEGUE PERMITIDO (8 de 8 etapas aprobadas)
