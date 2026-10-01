@@ -43,6 +43,14 @@ data "aws_ami" "al2023" {
 resource "aws_s3_bucket" "clips" {
   bucket        = "clipshare-${data.aws_caller_identity.actual.account_id}${local.sufijo}"
   force_destroy = true # entorno de laboratorio: permite destruir con clips dentro
+
+  lifecycle {
+    # El Learner Lab niega s3:GetBucketObjectLockConfiguration via SCP; el
+    # provider intenta leerlo al "tocar" el recurso (incluye un recalculo de
+    # tags_all sin cambios reales). Evita que ese recalculo dispare un apply
+    # que falla por el permiso denegado.
+    ignore_changes = [tags_all]
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "clips" {

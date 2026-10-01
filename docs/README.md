@@ -91,6 +91,32 @@ Ver el diagrama en `docs/diagrama_arquitectura.png`.
 | Dockerfile endurecido | `Dockerfile.api`, `Dockerfile.worker`: version fija, `USER 10001`, `HEALTHCHECK`; validado por `pipeline/politica_dockerfile.py` |
 | IaC | `infra/*.tf` (S3, KMS, RDS, grupos de seguridad, EC2) |
 
+## Entrega Final: parche, hallazgo y remediacion
+
+Se aplico el parche entregado por el docente (exportar clip en baja
+resolucion) tal cual, se dejo que el pipeline lo detuviera, se clasifico el
+hallazgo y se remedio la causa raiz. Ver:
+
+- `docs/clasificacion_hallazgo.md` — tipo (CWE-78), severidad y evidencia.
+- `docs/respuesta_incidente.md` — contencion inmediata vs. prevencion.
+- `reportes/pipeline_bloqueado.txt` / `reportes/pipeline_verde.txt` — las dos corridas.
+- Commits `Aplica parche` -> `Detecta y clasifica` -> `Remedia la causa raiz` en el historial de git.
+
+El codigo remediado se desplego primero en la instancia de **QA** (la misma
+EC2 del Avance 2) y, ya en verde, se promovio a una instancia de
+**Produccion** nueva, creada con su propio workspace de Terraform:
+
+```bash
+terraform -chdir=infra workspace new prod   # una sola vez
+terraform -chdir=infra workspace select prod
+export TF_VAR_db_password='...' TF_VAR_cidr_autorizado='TU.IP/32' TF_VAR_entorno='prod'
+terraform -chdir=infra apply                # crea un S3/RDS/EC2 propios, con sufijo -prod
+
+./infra/desplegar.sh <instancia_id_de_produccion>
+```
+
+Ver `docs/evidencia_produccion.md` para la prueba de que corre ahi.
+
 ## Como se corre el pipeline
 
 Requiere Docker en ejecucion y Python 3 (descarga las herramientas como contenedores).
