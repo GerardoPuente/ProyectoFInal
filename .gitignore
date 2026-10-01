@@ -1,0 +1,24 @@
+# Nunca subas credenciales ni entornos locales
+.env
+*.pem
+venv/
+__pycache__/
+*.pyc
+bin/
+
+# Terraform: el estado puede contener secretos
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.venv-pipeline/
+.pipeline-tmp/
+plan_s3.out
+plan_sg.out
+
+# Entornos locales con secretos
+.env.*
+!.env.ejemplo
+
+# Planes de Terraform (incluyen valores sensibles)
+*.out

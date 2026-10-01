@@ -1,0 +1,27 @@
+# Solo para desarrollo en tu laptop: agrega un Postgres local porque el RDS
+# real no es alcanzable desde fuera de AWS. Uso:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+services:
+  db:
+    image: postgres:15.14-bookworm
+    container_name: clipshare-db-local
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      retries: 10
+  api:
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+  worker:
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipShare</title>
+<style>
+  :root { --fondo:#0f1115; --panel:#181b22; --borde:#2a2f3a; --texto:#e8eaed; --suave:#9aa0ab; --acento:#ff3d6e; --ok:#3ecf8e; --aviso:#f5b83d; --mal:#ff5c5c; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 system-ui,sans-serif; background:var(--fondo); color:var(--texto); }
+  header { display:flex; justify-content:space-between; align-items:center; padding:14px 24px; border-bottom:1px solid var(--borde); }
+  header h1 { margin:0; font-size:20px; } header h1 span { color:var(--acento); }
+  main { max-width:960px; margin:0 auto; padding:24px; }
+  .panel { background:var(--panel); border:1px solid var(--borde); border-radius:10px; padding:18px; margin-bottom:20px; }
+  input, button { font:inherit; padding:9px 12px; border-radius:7px; border:1px solid var(--borde); background:#0f1115; color:var(--texto); }
+  input[type=file] { width:100%; }
+  button { background:var(--acento); border:0; color:#fff; cursor:pointer; font-weight:600; }
+  button.sec { background:transparent; border:1px solid var(--borde); color:var(--texto); }
+  .fila { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; } .fila > input { flex:1; min-width:140px; }
+  .rejilla { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:14px; }
+  .clip { background:var(--panel); border:1px solid var(--borde); border-radius:10px; overflow:hidden; cursor:pointer; }
+  .clip .mini { aspect-ratio:16/9; width:100%; background:#000 center/cover; display:flex; align-items:center; justify-content:center; color:var(--suave); font-size:13px; }
+  .clip .info { padding:10px 12px; } .clip .info b { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .etq { font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid currentColor; }
+  .listo{color:var(--ok)} .pendiente,.procesando{color:var(--aviso)} .rechazado{color:var(--mal)}
+  .msg { color:var(--suave); min-height:1.4em; } .msg.mal { color:var(--mal); }
+  video { width:100%; max-height:70vh; border-radius:8px; background:#000; }
+  .oculto { display:none; }
+</style>
+</head>
+<body>
+<header><h1>Clip<span>Share</span></h1><div id="sesion"></div></header>
+<main>
+  <section id="vista-acceso" class="panel">
+    <h2>Entrar</h2>
+    <div class="fila"><input id="usuario" placeholder="usuario" autocomplete="username"><input id="password" type="password" placeholder="contrasena (min. 8)" autocomplete="current-password"></div>
+    <div class="fila"><button onclick="entrar()">Iniciar sesion</button><button class="sec" onclick="registrar()">Crear cuenta</button></div>
+    <div id="msg-acceso" class="msg"></div>
+  </section>
+  <section id="vista-app" class="oculto">
+    <div class="panel">
+      <h2>Subir un clip</h2>
+      <div class="fila"><input id="titulo" placeholder="titulo del clip" maxlength="120"></div>
+      <div class="fila"><input id="archivo" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-matroska"></div>
+      <div class="fila"><button onclick="subir()">Subir</button></div>
+      <div id="msg-subida" class="msg"></div>
+    </div>
+    <div id="reproductor" class="panel oculto"></div>
+    <h2>Clips</h2>
+    <div id="clips" class="rejilla"></div>
+  </section>
+</main>
+<script>
+let token = localStorage.getItem('token'), nombre = localStorage.getItem('usuario'), temporizador;
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const api = (ruta, op = {}) => fetch(ruta, { ...op, headers: { ...(op.headers || {}), ...(token ? { Authorization: 'Bearer ' + token } : {}) } });
+function aviso(id, texto, mal) { $(id).textContent = texto; $(id).className = 'msg' + (mal ? ' mal' : ''); }
+async function credenciales(ruta) {
+  const r = await fetch(ruta, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: $('usuario').value, password: $('password').value }) });
+  return { ok: r.ok, datos: await r.json().catch(() => ({})) };
+}
+async function registrar() { const { ok, datos } = await credenciales('/registro'); aviso('msg-acceso', ok ? 'Cuenta creada, ahora inicia sesion' : (datos.detail || 'Error'), !ok); }
+async function entrar() {
+  const { ok, datos } = await credenciales('/login');
+  if (!ok) return aviso('msg-acceso', datos.detail || 'Error', true);
+  token = datos.token; nombre = datos.usuario; localStorage.setItem('token', token); localStorage.setItem('usuario', nombre); mostrar();
+}
+function salir() { localStorage.clear(); token = null; mostrar(); }
+async function subir() {
+  const f = $('archivo').files[0]; if (!f) return aviso('msg-subida', 'Elige un archivo', true);
+  const fd = new FormData(); fd.append('titulo', $('titulo').value || f.name); fd.append('archivo', f);
+  aviso('msg-subida', 'Subiendo...');
+  const r = await api('/clips', { method: 'POST', body: fd }); const d = await r.json().catch(() => ({}));
+  if (!r.ok) return aviso('msg-subida', d.detail || 'Error al subir', true);
+  aviso('msg-subida', 'Clip recibido: el worker lo esta procesando'); $('titulo').value = ''; $('archivo').value = ''; cargar();
+}
+async function cargar() {
+  const r = await api('/clips'); if (r.status === 401) return salir();
+  const clips = await r.json();
+  $('clips').innerHTML = clips.map(c => `
+    <div class="clip" onclick="ver('${c.id}')">
+      <div class="mini" style="${c.miniatura ? `background-image:url('${c.miniatura}')` : ''}">${c.miniatura ? '' : esc(c.estado)}</div>
+      <div class="info"><b>${esc(c.titulo)}</b><small>@${esc(c.autor)}${c.duracion_s ? ' · ' + c.duracion_s.toFixed(1) + ' s' : ''}</small><br>
+      <span class="etq ${esc(c.estado)}">${esc(c.estado)}</span>${c.motivo_rechazo ? `<br><small>${esc(c.motivo_rechazo)}</small>` : ''}</div>
+    </div>`).join('') || '<p class="msg">Aun no hay clips.</p>';
+  clearTimeout(temporizador);
+  if (clips.some(c => c.estado === 'pendiente' || c.estado === 'procesando')) temporizador = setTimeout(cargar, 3000);
+}
+async function ver(id) {
+  const c = await (await api('/clips/' + id)).json(); const p = $('reproductor');
+  if (!c.video) { p.classList.add('oculto'); return; }
+  p.classList.remove('oculto');
+  p.innerHTML = `<h3>${esc(c.titulo)}</h3><video src="${c.video}" controls autoplay></video><p class="msg">@${esc(c.autor)} · ${c.duracion_s.toFixed(1)} s · ${esc(c.resolucion)} · ${esc(c.codec)}</p>`;
+  p.scrollIntoView({ behavior: 'smooth' });
+}
+function mostrar() {
+  $('vista-acceso').classList.toggle('oculto', !!token); $('vista-app').classList.toggle('oculto', !token);
+  $('sesion').innerHTML = token ? `@${esc(nombre)} <button class="sec" onclick="salir()">Salir</button>` : '';
+  if (token) cargar();
+}
+mostrar();
+</script>
+</body>
+</html>

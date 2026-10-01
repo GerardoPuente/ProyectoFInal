@@ -1,0 +1,29 @@
+FROM python:3.12.14-slim-trixie
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app
+
+# Parches de seguridad del sistema (la base trixie ya trae libexpat corregido) y ffmpeg, que trae
+# ffprobe (validar formato y leer duracion) y ffmpeg (miniatura)
+RUN apt-get update \
+    && apt-get upgrade -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY app/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app/clipshare ./clipshare
+COPY app/worker ./worker
+
+RUN useradd --system --uid 10001 --no-create-home appuser
+USER 10001
+
+# El worker no abre puerto: su salud es que siga latiendo (toca un archivo cada ciclo)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["python", "-c", "import os,sys,time; sys.exit(0 if time.time()-os.path.getmtime('/tmp/worker.latido') < 60 else 1)"]
+
+CMD ["python", "-m", "worker.worker"]

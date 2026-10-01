@@ -1,0 +1,35 @@
+# La base de datos NO esta aqui: es el RDS real de AWS.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: clipshare-api:1.0
+    container_name: clipshare-api
+    env_file: .env
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    image: clipshare-worker:1.0
+    container_name: clipshare-worker
+    env_file: .env
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

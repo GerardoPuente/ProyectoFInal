@@ -1,0 +1,206 @@
+Pipeline ClipShare - 2026-09-30 22:16:41
+Commit: sin commits aun
+Archivos analizados: 37
+[notice] To update, run: C:\Users\Trax GG\Downloads\OneDrive_2026-10-01\Avance 2\plantilla_repositorio_avance2\.venv-pipeline\Scripts\python.exe -m pip install --upgrade pip
+
+==================================================================
+ ETAPA: 1. Secretos en el codigo (Gitleaks)
+ Umbral que bloquea: cualquier secreto detectado (0 toleradas)
+==================================================================
+Finding:     AWS_SECRET_ACCESS_KEY = "REDACTED"
+Secret:      REDACTED
+RuleID:      generic-api-key
+Entropy:     4.871928
+File:        /src/app/clipshare/config_temporal.py
+Line:        3
+Fingerprint: /src/app/clipshare/config_temporal.py:generic-api-key:3
+
+Finding:     ...WS_ACCESS_KEY_ID = "REDACTED
+Secret:      REDACTED
+RuleID:      aws-access-token
+Entropy:     3.821928
+File:        /src/app/clipshare/config_temporal.py
+Line:        2
+Fingerprint: /src/app/clipshare/config_temporal.py:aws-access-token:2
+
+4:16AM INF scanned ~721094 bytes (721.09 KB) in 529ms
+4:16AM WRN leaks found: 2
+--> [FALLO] 1. Secretos en el codigo (Gitleaks)
+
+==================================================================
+ ETAPA: 2. Analisis estatico del codigo (Bandit)
+ Umbral que bloquea: 1 o mas hallazgos de severidad ALTA
+==================================================================
+Run started:2026-10-01 04:16:43.707598+00:00
+
+Test results:
+>> Issue: [B108:hardcoded_tmp_directory] Probable insecure usage of temp file/directory.
+   Severity: Medium   Confidence: Medium
+   CWE: CWE-377 (https://cwe.mitre.org/data/definitions/377.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b108_hardcoded_tmp_directory.html
+   Location: C:/Users/Trax GG/Downloads/OneDrive_2026-10-01/Avance 2/plantilla_repositorio_avance2/.pipeline-tmp/fuente/app\worker\worker.py:17:14
+16	
+17	LATIDO = Path("/tmp/worker.latido")  # lo lee el HEALTHCHECK del contenedor
+18	INTERVALO_S = 3
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 348
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 6
+		Medium: 1
+		High: 0
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 2
+		High: 5
+Files skipped (0):
+--> [APROBADA] 2. Analisis estatico del codigo (Bandit)
+
+==================================================================
+ ETAPA: 3. Pruebas de las reglas de validacion (pytest)
+ Umbral que bloquea: 1 o mas pruebas fallidas
+==================================================================
+.........                                                                [100%]
+9 passed in 0.20s
+--> [APROBADA] 3. Pruebas de las reglas de validacion (pytest)
+
+==================================================================
+ ETAPA: 4. Dependencias vulnerables (Trivy)
+ Umbral que bloquea: 1 o mas CVE HIGH,CRITICAL con parche disponible
+==================================================================
+2026-10-01T04:16:44Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T04:16:44Z	WARN	[pip] Unable to find python `site-packages` directory. License detection is skipped.	err="unable to find path to Python executable"
+2026-10-01T04:16:44Z	INFO	Number of language-specific files	num=1
+2026-10-01T04:16:44Z	INFO	[pip] Detecting vulnerabilities...
+
+Report Summary
+
+┌──────────────────┬──────┬─────────────────┐
+│      Target      │ Type │ Vulnerabilities │
+├──────────────────┼──────┼─────────────────┤
+│ requirements.txt │ pip  │        0        │
+└──────────────────┴──────┴─────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+--> [APROBADA] 4. Dependencias vulnerables (Trivy)
+
+==================================================================
+ ETAPA: 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+ Umbral que bloquea: 1 o mas fallas HIGH,CRITICAL de configuracion
+==================================================================
+2026-10-01T04:16:45Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2026-10-01T04:16:45Z	INFO	[checks-client] Using existing checks from cache	path="/root/.cache/trivy/policy/content"
+2026-10-01T04:16:46Z	INFO	[terraform scanner] Scanning root module	file_path="infra"
+2026-10-01T04:16:46Z	WARN	[terraform parser] Variable values were not found in the environment or variable files. Evaluating may not work correctly.	module="root" variables="cidr_autorizado, db_password"
+2026-10-01T04:16:46Z	INFO	Detected config files	num=4
+
+Report Summary
+
+┌───────────────────┬────────────┬───────────────────┐
+│      Target       │    Type    │ Misconfigurations │
+├───────────────────┼────────────┼───────────────────┤
+│ Dockerfile.api    │ dockerfile │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ Dockerfile.worker │ dockerfile │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ infra             │ terraform  │         0         │
+├───────────────────┼────────────┼───────────────────┤
+│ infra/main.tf     │ terraform  │         0         │
+└───────────────────┴────────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+--> [APROBADA] 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+
+==================================================================
+ ETAPA: 6. Politica de Dockerfile endurecido
+ Umbral que bloquea: version no fija, USER root, sin HEALTHCHECK o secreto en Dockerfile
+==================================================================
+Dockerfile.api: CUMPLE
+Dockerfile.worker: CUMPLE
+--> [APROBADA] 6. Politica de Dockerfile endurecido
+
+==================================================================
+ ETAPA: 7. Imagenes de contenedor (build + Trivy image)
+ Umbral que bloquea: 1 o mas CVE HIGH,CRITICAL con parche disponible en api o worker
+==================================================================
+--- construyendo clipshare-api:pipeline
+--- escaneando clipshare-api:pipeline
+2026-10-01T04:16:49Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T04:16:51Z	INFO	Detected OS	family="debian" version="12.15"
+2026-10-01T04:16:51Z	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=105
+2026-10-01T04:16:51Z	INFO	Number of language-specific files	num=1
+2026-10-01T04:16:51Z	INFO	[python-pkg] Detecting vulnerabilities...
+2026-10-01T04:16:51Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+--- construyendo clipshare-worker:pipeline
+--- escaneando clipshare-worker:pipeline
+2026-10-01T04:16:57Z	INFO	[vuln] Vulnerability scanning is enabled
+2026-10-01T04:17:08Z	INFO	Detected OS	family="debian" version="12.15"
+2026-10-01T04:17:08Z	INFO	[debian] Detecting vulnerabilities...	os_version="12" pkg_num=298
+2026-10-01T04:17:08Z	INFO	Number of language-specific files	num=1
+2026-10-01T04:17:08Z	INFO	[python-pkg] Detecting vulnerabilities...
+2026-10-01T04:17:08Z	WARN	Using severities from other vendors for some vulnerabilities. Read https://trivy.dev/docs/v0.74/guide/scanner/vulnerability#severity-selection for details.
+
+/work/worker.tar (debian 12.15)
+===============================
+Total: 6 (HIGH: 6, CRITICAL: 0)
+
+┌───────────┬────────────────┬──────────┬────────┬───────────────────┬─────────────────┬─────────────────────────────────────────────────────────────┐
+│  Library  │ Vulnerability  │ Severity │ Status │ Installed Version │  Fixed Version  │                            Title                            │
+├───────────┼────────────────┼──────────┼────────┼───────────────────┼─────────────────┼─────────────────────────────────────────────────────────────┤
+│ libexpat1 │ CVE-2024-28757 │ HIGH     │ fixed  │ 2.5.0-1+deb12u3   │ 2.5.0-1+deb12u4 │ expat: XML Entity Expansion                                 │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2024-28757                  │
+│           ├────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│           │ CVE-2025-59375 │          │        │                   │                 │ firefox: thunderbird: expat: libexpat in Expat allows       │
+│           │                │          │        │                   │                 │ attackers to trigger large dynamic...                       │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2025-59375                  │
+│           ├────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│           │ CVE-2026-25210 │          │        │                   │                 │ libexpat: libexpat: Information disclosure and data         │
+│           │                │          │        │                   │                 │ integrity issues due to integer overflow...                 │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-25210                  │
+│           ├────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│           │ CVE-2026-45186 │          │        │                   │                 │ libexpat: denial of service via crafted XML input           │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-45186                  │
+│           ├────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│           │ CVE-2026-66046 │          │        │                   │                 │ expat: Expat: Denial of Service via quadratic complexity in │
+│           │                │          │        │                   │                 │ attribute processing                                        │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-66046                  │
+│           ├────────────────┤          │        │                   │                 ├─────────────────────────────────────────────────────────────┤
+│           │ CVE-2026-93990 │          │        │                   │                 │ expat: Expat: XML Injection via Malformed UTF-16 Input      │
+│           │                │          │        │                   │                 │ https://avd.aquasec.com/nvd/cve-2026-93990                  │
+└───────────┴────────────────┴──────────┴────────┴───────────────────┴─────────────────┴─────────────────────────────────────────────────────────────┘
+--> [FALLO] 7. Imagenes de contenedor (build + Trivy image)
+
+==================================================================
+ ETAPA: 8. SBOM CycloneDX
+ Umbral que bloquea: SBOM invalido o sin componentes
+==================================================================
+SBOM CycloneDX 1.7 con 331 componentes
+--> [APROBADA] 8. SBOM CycloneDX
+
+==================================================================
+ RESUMEN DEL PIPELINE
+==================================================================
+  [FALLO] 1. Secretos en el codigo (Gitleaks)
+           bloquea con: cualquier secreto detectado (0 toleradas)
+  [ OK  ] 2. Analisis estatico del codigo (Bandit)
+  [ OK  ] 3. Pruebas de las reglas de validacion (pytest)
+  [ OK  ] 4. Dependencias vulnerables (Trivy)
+  [ OK  ] 5. Infraestructura como codigo y Dockerfiles (Trivy config)
+  [ OK  ] 6. Politica de Dockerfile endurecido
+  [FALLO] 7. Imagenes de contenedor (build + Trivy image)
+           bloquea con: 1 o mas CVE HIGH,CRITICAL con parche disponible en api o worker
+  [ OK  ] 8. SBOM CycloneDX
+
+VEREDICTO FINAL: DESPLIEGUE BLOQUEADO (2 de 8 etapas fallaron)

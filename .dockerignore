@@ -1,0 +1,9 @@
+.env
+.git
+reportes
+docs
+infra
+video
+tests
+*.pem
+**/__pycache__

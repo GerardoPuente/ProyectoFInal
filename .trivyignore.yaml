@@ -1,0 +1,10 @@
+# Excepciones ACEPTADAS del escaneo de configuracion. Cada una esta justificada
+# tambien en docs/tabla_decisiones_pipeline.md. Si agregas una, justifica por que.
+misconfigurations:
+  - id: AWS-0104
+    paths:
+      - "infra/main.tf"
+    statement: >-
+      La instancia necesita salir por HTTPS (443) y HTTP (80, repositorios apt) a S3, SSM y repositorios de
+      paquetes cuyas IP cambian; ya se limito a un solo puerto y al RDS. Riesgo
+      residual aceptado: exfiltracion por 443 si la instancia se compromete.
