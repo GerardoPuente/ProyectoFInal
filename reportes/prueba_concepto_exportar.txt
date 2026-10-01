@@ -1,0 +1,19 @@
+Prueba de concepto aislada de CWE-78 en app/api/exportar.py (POST /clips/<id>/exportar)
+Ejecutada dentro de la imagen clipshare-api real (Linux/Debian), sin tocar ninguna instancia desplegada.
+Fecha: 2026-09-30 23:14:50
+
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /test_pov
+plugins: anyio-4.15.1
+collected 2 items
+
+../test_pov/test_exportar_vulnerabilidad.py ..                           [100%]
+
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/_pytest/cacheprovider.py:469
+  /usr/local/lib/python3.12/site-packages/_pytest/cacheprovider.py:469: PytestCacheWarning: could not create cache path /test_pov/.pytest_cache/v/cache/nodeids: [Errno 30] Read-only file system: '/test_pov/pytest-cache-files-nsebuga8'
+    config.cache.set("cache/nodeids", sorted(self.cached_nodeids))
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+========================= 2 passed, 1 warning in 0.08s =========================
