@@ -14,6 +14,11 @@ provider "aws" {
 
 data "aws_caller_identity" "actual" {}
 
+# QA conserva los nombres del Avance 2; cualquier otro entorno agrega su sufijo
+locals {
+  sufijo = var.entorno == "qa" ? "" : "-${var.entorno}"
+}
+
 data "aws_vpc" "default" {
   default = true
 }
@@ -36,7 +41,7 @@ data "aws_ami" "al2023" {
 
 # ---------------------------------------------------------------- S3
 resource "aws_s3_bucket" "clips" {
-  bucket        = "clipshare-${data.aws_caller_identity.actual.account_id}"
+  bucket        = "clipshare-${data.aws_caller_identity.actual.account_id}${local.sufijo}"
   force_destroy = true # entorno de laboratorio: permite destruir con clips dentro
 }
 
@@ -71,7 +76,7 @@ data "aws_iam_policy_document" "llave" {
 }
 
 resource "aws_kms_key" "clips" {
-  description             = "Cifrado del bucket de clips de ClipShare"
+  description             = "Cifrado del bucket de clips de ClipShare (${var.entorno})"
   enable_key_rotation     = true
   deletion_window_in_days = 7
   policy                  = data.aws_iam_policy_document.llave.json
@@ -122,7 +127,7 @@ resource "aws_s3_bucket_policy" "solo_tls" {
 
 # ---------------------------------------------------------------- Red
 resource "aws_security_group" "app" {
-  name        = "clipshare-app"
+  name        = "clipshare-app${local.sufijo}"
   description = "Instancia de la app: HTTP solo desde la IP autorizada, sin SSH"
   vpc_id      = data.aws_vpc.default.id
 
@@ -160,7 +165,7 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "rds" {
-  name        = "clipshare-rds"
+  name        = "clipshare-rds${local.sufijo}"
   description = "RDS: solo acepta PostgreSQL desde la instancia de la app"
   vpc_id      = data.aws_vpc.default.id
 
@@ -175,12 +180,12 @@ resource "aws_security_group" "rds" {
 
 # ---------------------------------------------------------------- RDS
 resource "aws_db_subnet_group" "clipshare" {
-  name       = "clipshare"
+  name       = "clipshare${local.sufijo}"
   subnet_ids = data.aws_subnets.default.ids
 }
 
 resource "aws_db_instance" "clipshare" {
-  identifier              = "clipshare-db"
+  identifier              = "clipshare-db${local.sufijo}"
   engine                  = "postgres"
   engine_version          = "15.14"
   instance_class          = "db.t3.micro"
@@ -219,6 +224,6 @@ resource "aws_instance" "app" {
   }
 
   tags = {
-    Name = "clipshare-app"
+    Name = "clipshare-app${local.sufijo}"
   }
 }

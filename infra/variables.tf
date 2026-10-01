@@ -27,3 +27,9 @@ variable "cidr_autorizado" {
     error_message = "Usa una IP concreta con /32, no 0.0.0.0/0."
   }
 }
+
+variable "entorno" {
+  type        = string
+  default     = "qa"
+  description = "qa (Avance 2) o prod. Cada entorno usa su propio workspace de Terraform."
+}
