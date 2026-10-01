@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from api.exportar import exportar_router
 from clipshare import db, reglas, seguridad, storage
 from clipshare.config import Config
 
@@ -24,6 +25,7 @@ async def ciclo_de_vida(_: FastAPI):
 
 app = FastAPI(title="ClipShare", lifespan=ciclo_de_vida)
 app.mount("/static", StaticFiles(directory="/app/api/static"), name="static")
+app.include_router(exportar_router)
 
 PATRON_USUARIO = re.compile(r"^[a-zA-Z0-9_]{3,30}$")
 
